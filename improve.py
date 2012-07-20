@@ -4,17 +4,16 @@ import networkx as nx
 import matplotlib.pyplot as plt
 from warnings import warn
 
-from scipy.sparse import csr_matrix, isspmatrix_csr
+from scipy.sparse import csr_matrix, coo_matrix, isspmatrix_coo, isspmatrix_csr
 
 def make_graph(A):
-    if not (isspmatrix_csr(A)):
+    if not (isspmatrix_coo(A)):
         try:
             A = coo_matrix(A)
             warn("Implicit conversion of A to COO", scipy.sparse.SparseEfficiencyWarning)
         except:
             raise TypeError('Argument A must have type coo_matrix,\
                              or be convertible to coo_matrix')
-    A = A.tocoo()
     G = nx.DiGraph()
     G.add_edges_from([(i,j) for (i,j) in zip(A.row,A.col) if (i != j)], capacity=1)
     G.add_nodes_from(range(A.shape[0]))
@@ -137,12 +136,6 @@ def augmented_graph(G,A,alpha,weights=None) :
 	elif n in A_bar :
 	  aug_G.add_edge(n,'t', capacity=weights[n]*fA*alpha)
 
-    #for edge in nx.edge_boundary(aug_G, A) :
-	#if aug_G.has_edge('s', edge[0]) :
-	#	aug_G.remove_edge(edge[1],edge[0])
-	#elif aug_G.has_edge('s', edge[1]) :
-	#	aug_G.remove_edge(edge[0],edge[1])
-
     return aug_G
 
 def min_cut(G, F, source='s') :
@@ -166,13 +159,6 @@ def min_cut(G, F, source='s') :
 		stack.append((child,iter(G[child])))
 	  except StopIteration:
 	     stack.pop() 
-
-def draw_graph(G, pos, parts, labels=None, node_size=10):
-   plt.figure()
-   plt.hold(True)
-   nx.draw(G, pos, node_size=node_size, node_color='red', with_labels=True, nodelist=list(parts[0]))
-   nx.draw(G, pos, node_size=node_size, node_color='green', with_labels=True, nodelist=list(parts[1]))
-   plt.show()
 
 def improve(G, A, score) :
    v_new = -numpy.ones_like(v)
