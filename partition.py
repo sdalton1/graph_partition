@@ -39,9 +39,10 @@ def isoperimetric(A, ground=None, residuals=None) :
   vmed = numpy.median(x)
   P1 = coarse[numpy.where(x<=vmed)[0]]
   P2 = coarse[numpy.where(x>vmed)[0]]
-  numpy.append(P1,ground)
 
-  return P1,P2,ground
+  P1 = numpy.append(P1,ground)
+
+  return P1,P2
 
 def spectral(A,eval=None,evec=None) :
 

@@ -2,8 +2,11 @@ from scipy.sparse import csr_matrix, coo_matrix, isspmatrix_coo
 from matplotlib.collections import LineCollection
 from warnings import warn
 
+import numpy
 import networkx as nx
 import pylab as pl
+
+from helper import *
 
 def make_graph(A):
     #if not (isspmatrix_coo(A)):
@@ -38,4 +41,23 @@ def networkx_draw_graph(A, parts, pos=None, with_labels=False, node_size=50):
    nx.draw(G, pos, node_size=node_size, node_color='red', with_labels=with_labels, nodelist=list(parts[0]), width=0.1)
    nx.draw(G, pos, node_size=node_size, node_color='blue', with_labels=with_labels, nodelist=list(parts[1]), width=0.1)
    pl.show()
+
+def draw_graph(V,E,P,title,subplot=None) :
+   v = numpy.ones(V.shape[0])
+   v[P] = -1
+
+   if subplot is None :
+     pl.figure()
+     sub = pl.gca()
+     trimesh(V,E)
+     sub.hold(True)
+     sub.scatter(V[:,0],V[:,1],marker='o',s=50,c=v)
+     sub.title(title)
+     pl.show()
+   else :
+     pl.subplot(subplot)
+     trimesh(V,E)
+     pl.hold(True)
+     pl.scatter(V[:,0],V[:,1],marker='o',s=50,c=v)
+     pl.title(title)
 

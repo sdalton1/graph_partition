@@ -10,14 +10,14 @@ from plotgraph import *
 
 method = 2 # partiton method : 1=isopermetric, 2=spectral
 meshnum = 2
-nodes = 16
+nodes = 10
 
 if meshnum==1:
     from pyamg.gallery import mesh
     V,E = mesh.regular_triangle_mesh(nodes,nodes)
 if meshnum==2:
     from scipy.io import loadmat
-    graph_names = ['crack_mesh','random_disk_graph']
+    graph_names = ['crack_mesh','random_disk_graph','random_disk_graph_1000']
     mesh = loadmat(graph_names[1])
     V=mesh['V']
     E=mesh['E']
@@ -36,91 +36,84 @@ if method==1 :
 elif method == 2:
   P1,P2 = spectral(A)
 
-v = numpy.zeros((A.shape[0],), dtype=numpy.int32)
-v[P1] = -1
-v[P2] =  1
-
-# plot the mesh and partition
-pylab.interactive(True)
-
-#pylab.figure()
-#trimesh(V,E)
-#sub = pylab.gca()
-#sub.hold(True)
-#sub.scatter(V[:,0],V[:,1],marker='o',s=50,c=v)
-#pylab.show()
-
-rel_score = quotient_score(A,v)
-print 'quotient_score : %4.2f' % rel_score
+#v = numpy.zeros((A.shape[0],), dtype=numpy.int32)
+#v[P1] = 1
+#v[P2] = -1
 
 parts = [P1,P2]
+list_sizes = numpy.array([len(P1),len(P2)])
 
-X = scipy.rand(A.shape[0],2)
-initial_pos_x = 3*(v+1) + X[:,0]
-initial_pos_y = 3*(v+1) + X[:,1]
-pos = dict(zip(range(A.shape[0]), zip(initial_pos_x, initial_pos_y))) # use partition ids as initial coordinates
-networkx_draw_graph(A, parts, pos=pos) 
+min_size = min(list_sizes)
+max_size = max(list_sizes)
+min_pos = numpy.where(list_sizes==min_size)[0][0]
+max_pos = numpy.where(list_sizes==max_size)[0][0]
 
-v_orig = numpy.zeros_like(v)
-v_orig[:] = v
+P1 = parts[min_pos]
+P2 = parts[max_pos]
 
-if numpy.isfinite(rel_score) :
-	v_new = -numpy.ones_like(v)
-	aug_G = augmented_graph(A,P1,rel_score)
+part1 = [P1]
+cuts = [edge_cuts(A,P1)]
+imbalance = [(len(P2)-len(P1)+0.0)/len(P2)]
 
-	flow,F = nx.ford_fulkerson(aug_G, 's', 't')
-	for u,v in min_cut(aug_G,F) :
-	  if not isinstance(u,str) :
-	    v_new[u] = 1
-	  if not isinstance(v,str) :
-	    v_new[v] = 1
+rel_scores = [A.shape[0]]
+rel_scores.append(quotient_score(A,P1))
+print 'quotient_score : %4.5f' % rel_scores[-1]
 
-	P1_new = numpy.where(v_new==1)[0]
-	P2_new = numpy.where(v_new==-1)[0]
-	parts_new = [P1_new,P2_new]
+while (rel_scores[-1] > 0) and (rel_scores[-1] < rel_scores[-2]) :
+   P1_new,P2_new = improve(A, P1, rel_scores[-1])
 
-	rel_score2 = rel_quotient_score(A,P1,P1_new,v_new)
-	print 'relative quotient_score : %4.2f' % rel_score2
+   score = rel_quotient_score(A,P1,P1_new)
 
-	#aug_G.remove_node('s')
-	#aug_G.remove_node('t')
-    	#pos=nx.spring_layout(aug_G, iterations=400)
-	#draw_graph(aug_G, pos, parts, node_size=700)
+   if not numpy.isfinite(score) : break
 
-	pylab.figure()
-	trimesh(V,E)
-	sub = pylab.gca()
-	sub.hold(True)
-	sub.scatter(V[:,0],V[:,1],marker='o',s=50,c=v_new)
-	pylab.show()
+   print 'relative quotient_score : %4.5f' % score
+   rel_scores.append(score)
+   cuts.append(edge_cuts(A, P1_new))
 
-	#if rel_score2 < rel_score :
-	#  v_new2 = -numpy.ones_like(v_orig)
-	#  aug_G = augmented_graph(A,B1_new,rel_score2)
+   P1_weight = len(P1_new) + 0.0
+   P2_weight = len(P2_new) + 0.0
+   min_weight = min(P1_weight, P2_weight)
+   max_weight = max(P1_weight, P2_weight)
+   imbalance.append((max_weight-min_weight)/max_weight)
 
-	#  flow,F = nx.ford_fulkerson(aug_G, 's', 't')
-	#  for u,v in min_cut(aug_G,F) :
-	#    if not isinstance(u,str) :
-	#      v_new2[u] = 1
-	#    if not isinstance(v,str) :
-	#      v_new2[v] = 1
+   part1.append(P1_new)
+   P1,P2 = P1_new,P2_new
 
-	#  B1_new2 = numpy.where(v_new2==1)[0]
-	#  B2_new2 = numpy.where(v_new2==-1)[0]
-	#  parts_new2 = [B1_new2,B2_new2]
+#networkx_draw_graph(A, parts, pos=pos, node_size=50)
+# plot the mesh and partition
+pylab.interactive(True)
+x_range = range(len(rel_scores)-1)
 
-	#  rel_score = rel_quotient_score(A,B1_new,B1_new2,v_new2)
-	#  print 'relative quotient_score : %4.2f' % rel_score
+pylab.figure()
+pylab.subplot(221)
+pylab.plot(x_range, rel_scores[1:], '-ob')
+pylab.xlabel('Iteration')
+pylab.ylabel('Quotient Ratio')
 
-	#  pylab.figure()
-	#  trimesh(V,E)
-	#  sub = pylab.gca()
-	#  sub.hold(True)
-	#  sub.scatter(V[:,0],V[:,1],marker='o',s=50,c=v_new2)
-	#  pylab.show()
+pylab.subplot(222)
+pylab.plot(x_range, cuts, '-or')
+pylab.xlabel('Iteration')
+pylab.ylabel('Edge Cuts')
 
-	if run_from_ipython() is False :
-	  raw_input("Press Enter to continue...")
-else :
-	print 'Infinite score'
+pylab.subplot(223)
+imbalance = numpy.array(imbalance) * 100
+pylab.plot(x_range, imbalance, '-og')
+pylab.xlabel('Iteration')
+pylab.ylabel('% Imbalance')
+
+pylab.figure()
+draw_graph(V, E, part1[0],  'Before', subplot=121)
+draw_graph(V, E, part1[-1], 'After',  subplot=122)
+
+#X = scipy.rand(A.shape[0],2)
+#initial_pos_x = 4*(v+1) + X[:,0]
+#initial_pos_y = 4*(v+1) + X[:,1]
+#pos = dict(zip(range(A.shape[0]), zip(initial_pos_x, initial_pos_y))) # use partition ids as initial coordinates
+#networkx_draw_graph(A, parts, pos=pos) 
+
+#G = make_graph(A)
+#pos=nx.spring_layout(G, iterations=400)
+
+if run_from_ipython() is False :
+	raw_input("Press Enter to continue...")
 
