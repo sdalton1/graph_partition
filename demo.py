@@ -7,8 +7,9 @@ from helper import *
 from improve import *
 from partition import *
 from plotgraph import *
+from test_graphs import *
 
-method = 1 # partiton method : 1=isopermetric, 2=spectral
+method = 2 # partiton method : 1=isopermetric, 2=spectral
 meshnum = 2
 nodes = 15
 
@@ -27,6 +28,11 @@ if meshnum==3:
     N=mesh.shape[0]
     grid = numpy.meshgrid(range(nodes),range(nodes))
     V=numpy.vstack(map(numpy.ravel,grid)).T
+    E=numpy.vstack((mesh.row,mesh.col)).T
+if meshnum==4:
+    mesh = load_graph(0) 
+    xy = np.zeros((nv,2))
+    N=mesh.shape[0]
     E=numpy.vstack((mesh.row,mesh.col)).T
 
 A = graph_laplacian(V,E)
