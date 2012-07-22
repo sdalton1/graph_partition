@@ -8,9 +8,9 @@ from improve import *
 from partition import *
 from plotgraph import *
 
-method = 2 # partiton method : 1=isopermetric, 2=spectral
+method = 1 # partiton method : 1=isopermetric, 2=spectral
 meshnum = 2
-nodes = 10
+nodes = 15
 
 if meshnum==1:
     from pyamg.gallery import mesh
@@ -32,13 +32,9 @@ if meshnum==3:
 A = graph_laplacian(V,E)
 
 if method==1 :
-  P1,P2 = isoperimetric(A)
+  P1,P2,weights = isoperimetric(A)
 elif method == 2:
-  P1,P2 = spectral(A)
-
-#v = numpy.zeros((A.shape[0],), dtype=numpy.int32)
-#v[P1] = 1
-#v[P2] = -1
+  P1,P2,weights = spectral(A)
 
 parts = [P1,P2]
 list_sizes = numpy.array([len(P1),len(P2)])
@@ -79,7 +75,6 @@ while (rel_scores[-1] > 0) and (rel_scores[-1] < rel_scores[-2]) :
    part1.append(P1_new)
    P1,P2 = P1_new,P2_new
 
-#networkx_draw_graph(A, parts, pos=pos, node_size=50)
 # plot the mesh and partition
 pylab.interactive(True)
 x_range = range(len(rel_scores)-1)
@@ -102,17 +97,21 @@ pylab.xlabel('Iteration')
 pylab.ylabel('% Imbalance')
 
 pylab.figure()
-draw_graph(V, E, part1[0],  'Before', subplot=121)
-draw_graph(V, E, part1[-1], 'After',  subplot=122)
+draw_graph(V, E, part1[0], 'Weights', subplot=221, c=weights)
+draw_graph(V, E, part1[0], 'Before', subplot=222)
+draw_graph(V, E, part1[-1],'After',  subplot=223)
+
+#P1 = part1[0]
+#P2 = numpy.setdiff1d(numpy.arange(A.shape[0]), P1)
+#v = numpy.zeros((A.shape[0],), dtype=numpy.int32)
+#v[P1] = 1
+#v[P2] = -1
 
 #X = scipy.rand(A.shape[0],2)
 #initial_pos_x = 4*(v+1) + X[:,0]
 #initial_pos_y = 4*(v+1) + X[:,1]
 #pos = dict(zip(range(A.shape[0]), zip(initial_pos_x, initial_pos_y))) # use partition ids as initial coordinates
-#networkx_draw_graph(A, parts, pos=pos) 
-
-#G = make_graph(A)
-#pos=nx.spring_layout(G, iterations=400)
+#networkx_draw_graph(A, part1[0], pos=pos) 
 
 if run_from_ipython() is False :
 	raw_input("Press Enter to continue...")

@@ -37,12 +37,18 @@ def isoperimetric(A, ground=None, residuals=None) :
 
   # use the median of solution, x, as the separator
   vmed = numpy.median(x)
+  vmin = numpy.min(x)
   P1 = coarse[numpy.where(x<=vmed)[0]]
   P2 = coarse[numpy.where(x>vmed)[0]]
 
+  weights = numpy.zeros((A.shape[0],))
+  weights[P1] = x[numpy.where(x<=vmed)[0]]
+  weights[P2] = x[numpy.where(x>vmed)[0]]
+  weights[ground] = vmin-1
+
   P1 = numpy.append(P1,ground)
 
-  return P1,P2
+  return P1,P2,weights
 
 def spectral(A,eval=None,evec=None) :
 
@@ -65,5 +71,5 @@ def spectral(A,eval=None,evec=None) :
   P1 = numpy.where(fiedler<=vmed)[0]
   P2 = numpy.where(fiedler>vmed)[0]
 
-  return P1,P2
+  return P1,P2,fiedler
 
