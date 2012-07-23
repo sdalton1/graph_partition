@@ -152,9 +152,10 @@ def min_cut(G, F, source='s') :
 	  except StopIteration:
 	     stack.pop() 
 
-def improve(G, A, score) :
+def improve(G, A, score, weights) :
+
    part_num = -numpy.ones((G.shape[0],))
-   aug_G = augmented_graph(G,A,score)
+   aug_G = augmented_graph(G,A,score,weights=weights)
 
    flow,F = nx.ford_fulkerson(aug_G, 's', 't')
    for u,v in min_cut(aug_G,F) :

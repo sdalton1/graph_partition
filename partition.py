@@ -82,3 +82,14 @@ def spectral(A,eval=None,evec=None,plot=False) :
 
   return P1,P2,fiedler
 
+def metis(A, parts) :
+   from collections import defaultdict
+   from pymetis import part_graph
+
+   adj = defaultdict(list)
+   for i in range(A.shape[0]):
+     start_index = A.indptr[i]
+     stop_index = A.indptr[i+1]
+     adj.append(A.data[start_index:stop_index])
+
+   part_graph(parts, adj)
