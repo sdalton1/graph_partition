@@ -50,10 +50,10 @@ def isoperimetric(A, ground=None, residuals=None) :
 
   return P1,P2,weights
 
-def spectral(A,eval=None,evec=None) :
+def spectral(A,eval=None,evec=None,plot=False) :
 
   # solve for lowest two modes: constant vector and Fiedler vector
-  X = scipy.rand(A.shape[0], 4) 
+  X = scipy.rand(A.shape[0], 2) 
   # specify lowest eigenvector and orthonormalize fiedler against it
   X[:,0] = numpy.ones((A.shape[0],))
   X = numpy.linalg.qr(X, mode='full')[0]
@@ -70,6 +70,15 @@ def spectral(A,eval=None,evec=None) :
   vmed = numpy.median(fiedler)
   P1 = numpy.where(fiedler<=vmed)[0]
   P2 = numpy.where(fiedler>vmed)[0]
+
+  if plot is True :
+     from matplotlib.pyplot import semilogy,figure,show,title,xlabel,ylabel
+     figure()
+     semilogy(res)
+     xlabel('Iteration')
+     ylabel('Residual norm')
+     title('Spectral convergence history')
+     show()
 
   return P1,P2,fiedler
 

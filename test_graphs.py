@@ -1,9 +1,12 @@
 import urllib2
 import itertools
 import numpy
+import networkx as nx
 
 from scipy.sparse import coo_matrix
-from scipy.io import mmread, mmwrite
+from scipy.io import mmread, mmwrite, savemat, loadmat
+from helper import *
+from plotgraph import *
 
 names = ['add20', 'data', '3elt', 'uk', 'add32', 'bcsstk33', 'whitaker3', \
 	 'crack', 'wing_nodal', 'fe_4elt2', 'vibrobox', 'bcsstk29', '4elt', \
@@ -16,10 +19,10 @@ base = 'http://staffweb.cms.gre.ac.uk/~c.walshaw/partition/archive/%s/%s.graph'
 def load_graph(name) :
 
   try :
-    if name is str :
-    	G = mmread(name)
+    if isinstance(name, str) :
+    	mesh = loadmat(name)
     else :
-	G = mmread(names[name])
+	mesh = loadmat(names[name])
   except IOError as e:
     print 'Matrix market file : %s.mtx not available...downloading'%name
     url = base%(name,name)
@@ -34,8 +37,16 @@ def load_graph(name) :
     J = numpy.array(list(itertools.chain(*adj_lists[1:]))) - 1
     V = numpy.ones(2*num_edges)
 
-    print len(I), len(J), len(V)
     G = coo_matrix((V,(I,J)), shape=(num_nodes,num_nodes))
     mmwrite(name, G) 
 
-  return G
+    G_nx = make_graph(G)
+    pos = nx.spring_layout(G_nx, iterations=200)
+    x = numpy.array([pos[i][0] for i in range(G.shape[0])])
+    y = numpy.array([pos[i][1] for i in range(G.shape[0])])
+    V=numpy.vstack((x,y)).T
+    E=numpy.vstack((G.row,G.col)).T
+    mesh = {'V':V, 'E':E}
+    savemat(name,mesh)
+
+  return mesh

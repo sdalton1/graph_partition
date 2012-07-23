@@ -7,6 +7,7 @@ import networkx as nx
 import pylab as pl
 
 from helper import *
+from spy import *
 
 def make_graph(A):
     #if not (isspmatrix_coo(A)):
@@ -48,7 +49,7 @@ def draw_graph(V,E,P,title,subplot=None,c=None) :
    if c is None :
      show_colors = False
      c = numpy.ones(V.shape[0])
-     c[P] = -1
+     c[P] = -0.1
 
    if subplot is None :
      pl.figure()
@@ -72,3 +73,22 @@ def draw_graph(V,E,P,title,subplot=None,c=None) :
      fig = pl.gcf()
      cbar = fig.colorbar(cax, ticks=[minc,medc,maxc], shrink=0.75)
      cbar.ax.set_yticklabels(['%4.2f'%minc, '%4.2f'%medc, '%4.2f'%maxc])
+
+def plotperms(A, P1, title=None, subplot=None) :
+    if subplot is None:
+	subplot = 111
+	pl.figure()
+
+    #P2 = numpy.setdiff1d(numpy.arange(A.shape[0]), P1)
+    #v = numpy.zeros((A.shape[0],), dtype=numpy.int32)
+    #v[P1] = 1
+    #v[P2] = -1
+    #perm = v.argsort()
+    #A_perm = A[perm,:][:,perm]
+
+    ax = pl.subplot(subplot)
+    #pl.title(title)
+    #pl.spy(A_perm, marker='.', markersize=5)
+
+    Spy(A, P1, '.', title, ax) 
+

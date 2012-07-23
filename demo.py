@@ -10,8 +10,8 @@ from plotgraph import *
 from test_graphs import *
 
 method = 2 # partiton method : 1=isopermetric, 2=spectral
-meshnum = 2
-nodes = 15
+meshnum = 4
+nodes = 20
 
 if meshnum==1:
     from pyamg.gallery import mesh
@@ -30,17 +30,16 @@ if meshnum==3:
     V=numpy.vstack(map(numpy.ravel,grid)).T
     E=numpy.vstack((mesh.row,mesh.col)).T
 if meshnum==4:
-    mesh = load_graph(0) 
-    xy = np.zeros((nv,2))
-    N=mesh.shape[0]
-    E=numpy.vstack((mesh.row,mesh.col)).T
+    mesh = load_graph('wing') 
+    V=mesh['V']
+    E=mesh['E']
 
 A = graph_laplacian(V,E)
 
 if method==1 :
   P1,P2,weights = isoperimetric(A)
 elif method == 2:
-  P1,P2,weights = spectral(A)
+  P1,P2,weights = spectral(A,plot=True)
 
 parts = [P1,P2]
 list_sizes = numpy.array([len(P1),len(P2)])
@@ -107,11 +106,10 @@ draw_graph(V, E, part1[0], 'Weights', subplot=221, c=weights)
 draw_graph(V, E, part1[0], 'Before', subplot=222)
 draw_graph(V, E, part1[-1],'After',  subplot=223)
 
-#P1 = part1[0]
-#P2 = numpy.setdiff1d(numpy.arange(A.shape[0]), P1)
-#v = numpy.zeros((A.shape[0],), dtype=numpy.int32)
-#v[P1] = 1
-#v[P2] = -1
+pylab.figure()
+plotperms(A, range(A.shape[0]), title='Original', subplot=221)
+plotperms(A, part1[0], title='Spectral', subplot=222)
+plotperms(A, part1[-1], title='Spectral+Improve', subplot=223)
 
 #X = scipy.rand(A.shape[0],2)
 #initial_pos_x = 4*(v+1) + X[:,0]
