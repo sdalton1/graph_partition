@@ -18,11 +18,12 @@ base = 'http://staffweb.cms.gre.ac.uk/~c.walshaw/partition/archive/%s/%s.graph'
 
 def load_graph(name) :
 
+  dir = 'data/'
   try :
     if isinstance(name, str) :
-    	mesh = loadmat(name)
+    	mesh = loadmat(dir+name)
     else :
-	mesh = loadmat(names[name])
+	mesh = loadmat(dir+names[name])
   except IOError as e:
     print 'Matrix market file : %s.mtx not available...downloading'%name
     url = base%(name,name)
@@ -38,7 +39,7 @@ def load_graph(name) :
     V = numpy.ones(2*num_edges)
 
     G = coo_matrix((V,(I,J)), shape=(num_nodes,num_nodes))
-    mmwrite(name, G) 
+    mmwrite(dir+name, G) 
 
     G_nx = make_graph(G)
     pos = nx.spring_layout(G_nx, iterations=200)
@@ -47,6 +48,13 @@ def load_graph(name) :
     V=numpy.vstack((x,y)).T
     E=numpy.vstack((G.row,G.col)).T
     mesh = {'V':V, 'E':E}
-    savemat(name,mesh)
+    savemat(dir+name,mesh)
 
   return mesh
+
+###########################################################################
+if __name__ == '__main__':
+   
+   # generate all test graphs
+   for name in names :
+	load_graph(name)

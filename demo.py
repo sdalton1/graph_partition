@@ -13,13 +13,14 @@ method = 2 # partiton method : 1=isopermetric, 2=spectral
 meshnum = 4
 nodes = 20
 
+dir = 'data/'
 if meshnum==1:
     from pyamg.gallery import mesh
     V,E = mesh.regular_triangle_mesh(nodes,nodes)
 if meshnum==2:
     from scipy.io import loadmat
     graph_names = ['crack_mesh','random_disk_graph','random_disk_graph_1000']
-    mesh = loadmat(graph_names[1])
+    mesh = loadmat(dir+graph_names[1])
     V=mesh['V']
     E=mesh['E']
 if meshnum==3:
@@ -30,7 +31,7 @@ if meshnum==3:
     V=numpy.vstack(map(numpy.ravel,grid)).T
     E=numpy.vstack((mesh.row,mesh.col)).T
 if meshnum==4:
-    mesh = load_graph('wing') 
+    mesh = load_graph(dir+'wing') 
     V=mesh['V']
     E=mesh['E']
 
