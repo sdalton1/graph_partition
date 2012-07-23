@@ -45,3 +45,10 @@ def graph_laplacian(V,E):
     A.setdiag(zeros((Npts,),dtype=float))
     A.setdiag(-1*array(A.sum(axis=1)).ravel())
     return A.tocsr()
+
+def run_from_ipython():
+    try:
+        __IPYTHON__
+        return True
+    except NameError:
+        return False
