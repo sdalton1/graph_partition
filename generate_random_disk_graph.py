@@ -130,4 +130,4 @@ print "The number of edges is %d"%(A.nnz/2.0)
 print "The average degree is %g"%C.sum(axis=1).mean()
 
 from scipy.io import savemat
-savemat('random_disk_graph',{'V':xy, 'E':edges})
+savemat('random_disk_graph_%d'%nv,{'V':xy, 'E':edges})
