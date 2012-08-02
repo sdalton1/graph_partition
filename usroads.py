@@ -15,9 +15,13 @@ ml = smoothed_aggregation_solver(A, coarse_solver='pinv2',max_coarse=100)
 M = ml.aspreconditioner()
 
 X = scipy.rand(A.shape[0], 2) 
-(eval,evec,res) = lobpcg(A, X, M=None, tol=1e-12, largest=False, \
-        verbosityLevel=0, retResidualNormsHistory=True)
+(eval,evec,res) = lobpcg(A, X, M=M, tol=1e-12, largest=False, \
+        verbosityLevel=0, retResidualNormsHistory=True, maxiter=200)
 
+print ml
+pylab.semilogy(res)
+
+pylab.figure()
 fiedler = evec[:,1]
 vmed = numpy.median(fiedler)
 v = numpy.zeros((A.shape[0],))

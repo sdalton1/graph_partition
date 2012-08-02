@@ -8,6 +8,8 @@ from scipy.sparse.linalg import lobpcg
 from pyamg import smoothed_aggregation_solver
 from pyamg.krylov import cg
 
+from improve import edge_cuts
+
 def isoperimetric(A, ground=None, residuals=None) :
 
   #from pyamg.graph import pseudo_peripheral_node
@@ -82,14 +84,44 @@ def spectral(A,eval=None,evec=None,plot=False) :
 
   return P1,P2,fiedler
 
+def spectral_sweep(A, fiedler) :
+  m,n = A.shape
+
+  order = fiedler[numpy.argsort(fiedler)] # sort 
+  cut_location = numpy.ceil(m/2)
+  vmed = order[cut_location]
+  P1 = numpy.where(fiedler<=vmed)[0]
+  P2 = numpy.where(fiedler>vmed)[0]
+
+  sweep_length = numpy.ceil(A.shape[0] * 0.05)
+  sweep_start = int(cut_location - sweep_length)
+  sweep_end   = int(cut_location + sweep_length)
+
+  quotient = edge_cuts(A,P1) / min(len(P1),len(P2))
+  cut_value = vmed
+
+  for i in range(sweep_start,sweep_end+1) :
+    P1 = numpy.where(fiedler<=order[i])[0]
+    P2 = numpy.where(fiedler>order[i])[0]
+    proposed_cuts = edge_cuts(A,P1)
+    proposed_quotient = proposed_cuts / min(len(P1),len(P2))
+    if proposed_quotient < quotient :
+	print 'original_cuts : %d, proposed cuts : %d'%(cuts,proposed_cuts)
+	cut_value = order[i]
+	cuts = proposed_cuts
+	quotient = proposed_quotient
+     
+    P1 = numpy.where(fiedler<=cut_value)[0]
+    P2 = numpy.where(fiedler>cut_value)[0]
+
+    return P1,P2,cut_value
+
 def metis(A, parts) :
    from collections import defaultdict
    from pymetis import part_graph
 
    adj = defaultdict(list)
    for i in range(A.shape[0]):
-     start_index = A.indptr[i]
-     stop_index = A.indptr[i+1]
-     adj.append(A.data[start_index:stop_index])
+     adj[i] = list(A.indices[A.indptr[i]:A.indptr[i+1]])
 
-   part_graph(parts, adj)
+   return part_graph(parts, adj)

@@ -10,10 +10,11 @@ from plotgraph import *
 from test_graphs import *
 
 from pyamg.util.utils import get_diagonal
+from scipy.sparse import spdiags
 
 method = 2 # partiton method : 1=isopermetric, 2=spectral
-meshnum = 4
-nodes = 20
+meshnum = 5
+nodes = 100
 
 if meshnum==1:
     from pyamg.gallery import mesh
@@ -35,13 +36,20 @@ if meshnum==4:
     mesh = load_graph(0) 
     V=mesh['V']
     E=mesh['E']
+if meshnum==5:
+    mesh=loadmat('usroads-48.mat')
+    V=mesh['Problem'][0][0][8][0][0][0]
+    E=mesh['Problem'][0][0][2].tocsr()
+    d = numpy.array(E.sum(axis=0)).ravel()
+    A = -E + spdiags(d,[0],E.shape[0],E.shape[1])
 
-A = graph_laplacian(V,E)
+#A = graph_laplacian(V,E)
 
 if method==1 :
   P1,P2,weights = isoperimetric(A)
 elif method == 2:
   P1,P2,weights = spectral(A,plot=True)
+  P1_opt,P2_opt,cut_value = spectral_sweep(A, weights)
 
 list_sizes = numpy.array([len(P1),len(P2)])
 min_size = min(list_sizes)
@@ -106,12 +114,14 @@ pylab.ylabel('% Imbalance')
 pylab.figure()
 draw_graph(V, E, part1[0], 'Weights', subplot=221, c=weights)
 draw_graph(V, E, part1[0], 'Before', subplot=222)
-draw_graph(V, E, part1[-1],'After',  subplot=223)
+draw_graph(V, E, P1_opt  , 'Before(Opt)', subplot=223)
+draw_graph(V, E, part1[-1],'After',  subplot=224)
 
 pylab.figure()
 plotperms(A, range(A.shape[0]), title='Original', subplot=221)
 plotperms(A, part1[0], title='Spectral', subplot=222)
-plotperms(A, part1[-1], title='Spectral+Improve', subplot=223)
+plotperms(A, P1_opt, title='Spectral(Opt)', subplot=223)
+plotperms(A, part1[-1], title='Spectral+Improve', subplot=224)
 
 #cut, metispart = metis(A, 2)
 
