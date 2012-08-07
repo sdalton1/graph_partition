@@ -12,7 +12,7 @@ from test_graphs import *
 from pyamg.util.utils import get_diagonal
 from scipy.sparse import spdiags
 
-method = 2 # partiton method : 1=isopermetric, 2=spectral
+method = 2 # partiton method : 1=isopermetric, 2=spectral, 3=metis
 meshnum = 5
 nodes = 100
 
@@ -42,14 +42,19 @@ if meshnum==5:
     E=mesh['Problem'][0][0][2].tocsr()
     d = numpy.array(E.sum(axis=0)).ravel()
     A = -E + spdiags(d,[0],E.shape[0],E.shape[1])
-
-#A = graph_laplacian(V,E)
+ 
+if meshnum != 5 :
+ A = graph_laplacian(V,E)
 
 if method==1 :
   P1,P2,weights = isoperimetric(A)
 elif method == 2:
   P1,P2,weights = spectral(A,plot=True)
-  P1_opt,P2_opt,cut_value = spectral_sweep(A, weights)
+  #P1_opt,P2_opt,cut_value = spectral_sweep(A, weights)
+elif method == 3:
+  cuts,partition = metis(A,2)
+  P1 = numpy.where(partition==0)[0]
+  P2 = numpy.where(partition==1)[0]
 
 list_sizes = numpy.array([len(P1),len(P2)])
 min_size = min(list_sizes)
