@@ -7,6 +7,7 @@ from scipy.sparse.linalg import lobpcg
 
 from pyamg import smoothed_aggregation_solver
 from pyamg.krylov import cg
+from tracemin_fiedler import tracemin_fiedler 
 
 from improve import edge_cuts
 
@@ -52,20 +53,27 @@ def isoperimetric(A, ground=None, residuals=None) :
 
   return P1,P2,weights
 
-def spectral(A,eval=None,evec=None,plot=False) :
+def spectral(A,eval=None,evec=None,plot=False,method='lobpcg') :
 
   # solve for lowest two modes: constant vector and Fiedler vector
   X = scipy.rand(A.shape[0], 2) 
-  # specify lowest eigenvector and orthonormalize fiedler against it
-  X[:,0] = numpy.ones((A.shape[0],))
-  X = numpy.linalg.qr(X, mode='full')[0]
 
-  # construct preconditioner
-  ml = smoothed_aggregation_solver(A,coarse_solver='pinv2')
-  M = ml.aspreconditioner()
+  if method == 'lobpcg' :
+  	# specify lowest eigenvector and orthonormalize fiedler against it
+  	X[:,0] = numpy.ones((A.shape[0],))
+  	X = numpy.linalg.qr(X, mode='full')[0]
 
-  (eval,evec,res) = lobpcg(A, X, M=M, tol=1e-8, largest=False, \
-        verbosityLevel=0, retResidualNormsHistory=True, maxiter=200)
+  	# construct preconditioner
+  	ml = smoothed_aggregation_solver(A,coarse_solver='pinv2')
+  	M = ml.aspreconditioner()
+
+  	(eval,evec,res) = lobpcg(A, X, M=M, tol=1e-5, largest=False, \
+        	verbosityLevel=0, retResidualNormsHistory=True, maxiter=200)
+  elif method == 'tracemin':
+	res = []
+	evec = tracemin_fiedler(A, residuals=res, tol=1e-5)
+  else :
+	raise InputError('Unknown method')
   
   # use the median of fiedler, as the separator
   fiedler = evec[:,1]
