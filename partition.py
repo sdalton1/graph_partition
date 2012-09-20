@@ -53,6 +53,24 @@ def isoperimetric(A, ground=None, residuals=None) :
 
   return P1,P2,weights
 
+def rqi(A=None, x=None, k=None):
+    from numpy.linalg import norm, solve
+    from numpy import dot, eye
+    from tracemin_fiedler import cg
+    from scipy.sparse.linalg import minres
+
+    for j in range(k):    
+        u = x/norm(x)                            # normalize
+        lam = dot(u,A*u) 	                 # Rayleigh quotient
+	#B = A - lam * eye(A.shape[0], A.shape[1])
+        #x = solve(B,u)  			 # inverse power iteration
+    	#D = scipy.sparse.dia_matrix((1.0/(A.diagonal()-lam), 0), shape=A.shape)
+
+	x,flag = minres(A,u,tol=1e-5,maxiter=30,shift=lam)
+    x = x/norm(x)
+    lam = dot(x,A*x)                        	 # Rayleigh quotient
+    return [lam,x]
+
 def spectral(A,eval=None,evec=None,plot=False,method='lobpcg') :
 
   # solve for lowest two modes: constant vector and Fiedler vector
@@ -72,6 +90,7 @@ def spectral(A,eval=None,evec=None,plot=False,method='lobpcg') :
   elif method == 'tracemin':
 	res = []
 	evec = tracemin_fiedler(A, residuals=res, tol=1e-5)
+	evec[:,1] = rqi(A, evec[:,1], k=3)[1]
   else :
 	raise InputError('Unknown method')
   
