@@ -22,7 +22,7 @@ def spectral_partition(A):
     v[K]=-1
     K = np.where(fiedler>vmed)[0]
     v[K]=1
-    return v
+    return v, res
 
 def graph_laplacian_from_florida(G):
     from scipy.sparse import spdiags
@@ -34,9 +34,9 @@ def graph_laplacian_from_florida(G):
 if __name__ == '__main__':
     from scipy.io import loadmat
     # from Florida Sparse Matrix Collection
-    d = loadmat('bcsstk31.mat')
+    d = loadmat('bcsstk30.mat')
     G = d['Problem'][0][0][1].tocsr()
-    x = np.loadtxt('bcsstk31.x')
+    x = np.loadtxt('bcsstk30.x')
     x = x[1:,:]
 
     import networkx
@@ -49,16 +49,16 @@ if __name__ == '__main__':
         cc = np.array(c[ccid])
         cc.sort()
 
-    print G.shape
-    I=np.setdiff1d(np.arange(0,G.shape[0]),cc)
-    # collapse columns
-    G = G[:,I]
-    # collapse rows
-    G = G[I,:]
-    print G.shape
+        print G.shape
+        I=np.setdiff1d(np.arange(0,G.shape[0]),cc)
+        # collapse columns
+        G = G[:,I]
+        # collapse rows
+        G = G[I,:]
+        print G.shape
 
     A = graph_laplacian_from_florida(G)
-    v = spectral_partition(A)
+    v, res = spectral_partition(A)
 
     vminus = np.where(v<0)[0]
     vplus = np.where(v>0)[0]
@@ -66,4 +66,7 @@ if __name__ == '__main__':
     plt.hold(True)
     plt.plot(x[vminus,0],x[vminus,1],'bo')
     plt.plot(x[vplus,0],x[vplus,1],'mo')
+    plt.show()
+    plt.figure()
+    plt.semilogy(res)
     plt.show()
