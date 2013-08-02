@@ -5,6 +5,7 @@ import pylab
 from pyamg import smoothed_aggregation_solver
 from scipy.io import loadmat
 from scipy.sparse import spdiags
+
 def dist(a,b):
     return numpy.sqrt((a[0]-b[0])**2 + (a[1]-b[1])**2)
 mesh=loadmat('usroads-48.mat')
@@ -18,7 +19,7 @@ d = numpy.array(A.sum(axis=0)).ravel()
 A = -A + spdiags(d,[0],A.shape[0],A.shape[1])
 
 
-ml = smoothed_aggregation_solver(A, coarse_solver='pinv2',max_coarse=10)
+ml = smoothed_aggregation_solver(A, coarse_solver='pinv2',max_coarse=100)
 M = ml.aspreconditioner()
 
 X = scipy.rand(A.shape[0], 2) 
@@ -34,5 +35,5 @@ K = numpy.where(fiedler>vmed)[0]
 v[K]=1
 
 from pylab import *
-scatter(V[:,0],V[:,1],marker='o',linewidths=0,s=6,c=v)
+scatter(V[:,0],V[:,1],marker='o',s=10,c=v)
 show()
