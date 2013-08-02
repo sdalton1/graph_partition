@@ -7,6 +7,9 @@ from scipy.sparse.linalg import lobpcg
 
 from pyamg import smoothed_aggregation_solver
 from pyamg.krylov import cg
+from tracemin_fiedler import tracemin_fiedler 
+
+from improve import edge_cuts
 
 def isoperimetric(A, ground=None, residuals=None) :
 
@@ -50,20 +53,46 @@ def isoperimetric(A, ground=None, residuals=None) :
 
   return P1,P2,weights
 
-def spectral(A,eval=None,evec=None,plot=False) :
+def rqi(A=None, x=None, k=None):
+    from numpy.linalg import norm, solve
+    from numpy import dot, eye
+    from tracemin_fiedler import cg
+    from scipy.sparse.linalg import minres
+
+    for j in range(k):    
+        u = x/norm(x)                            # normalize
+        lam = dot(u,A*u) 	                 # Rayleigh quotient
+	#B = A - lam * eye(A.shape[0], A.shape[1])
+        #x = solve(B,u)  			 # inverse power iteration
+    	#D = scipy.sparse.dia_matrix((1.0/(A.diagonal()-lam), 0), shape=A.shape)
+
+	x,flag = minres(A,u,tol=1e-5,maxiter=30,shift=lam)
+    x = x/norm(x)
+    lam = dot(x,A*x)                        	 # Rayleigh quotient
+    return [lam,x]
+
+def spectral(A,eval=None,evec=None,plot=False,method='lobpcg') :
 
   # solve for lowest two modes: constant vector and Fiedler vector
   X = scipy.rand(A.shape[0], 2) 
-  # specify lowest eigenvector and orthonormalize fiedler against it
-  X[:,0] = numpy.ones((A.shape[0],))
-  X = numpy.linalg.qr(X, mode='full')[0]
 
-  # construct preconditioner
-  ml = smoothed_aggregation_solver(A,coarse_solver='pinv2')
-  M = ml.aspreconditioner()
+  if method == 'lobpcg' :
+  	# specify lowest eigenvector and orthonormalize fiedler against it
+  	X[:,0] = numpy.ones((A.shape[0],))
+  	X = numpy.linalg.qr(X, mode='full')[0]
 
-  (eval,evec,res) = lobpcg(A, X, M=M, tol=1e-8, largest=False, \
-        verbosityLevel=0, retResidualNormsHistory=True, maxiter=200)
+  	# construct preconditioner
+  	ml = smoothed_aggregation_solver(A,coarse_solver='pinv2')
+  	M = ml.aspreconditioner()
+
+  	(eval,evec,res) = lobpcg(A, X, M=M, tol=1e-5, largest=False, \
+        	verbosityLevel=0, retResidualNormsHistory=True, maxiter=200)
+  elif method == 'tracemin':
+	res = []
+	evec = tracemin_fiedler(A, residuals=res, tol=1e-5)
+	evec[:,1] = rqi(A, evec[:,1], k=3)[1]
+  else :
+	raise InputError('Unknown method')
   
   # use the median of fiedler, as the separator
   fiedler = evec[:,1]
@@ -82,3 +111,44 @@ def spectral(A,eval=None,evec=None,plot=False) :
 
   return P1,P2,fiedler
 
+def spectral_sweep(A, fiedler) :
+  m,n = A.shape
+
+  order = fiedler[numpy.argsort(fiedler)] # sort 
+  cut_location = numpy.ceil(m/2)
+  vmed = order[cut_location]
+  P1 = numpy.where(fiedler<=vmed)[0]
+  P2 = numpy.where(fiedler>vmed)[0]
+
+  sweep_length = numpy.ceil(A.shape[0] * 0.05)
+  sweep_start = int(cut_location - sweep_length)
+  sweep_end   = int(cut_location + sweep_length)
+
+  quotient = edge_cuts(A,P1) / min(len(P1),len(P2))
+  cut_value = vmed
+
+  for i in range(sweep_start,sweep_end+1) :
+    P1 = numpy.where(fiedler<=order[i])[0]
+    P2 = numpy.where(fiedler>order[i])[0]
+    proposed_cuts = edge_cuts(A,P1)
+    proposed_quotient = proposed_cuts / min(len(P1),len(P2))
+    if proposed_quotient < quotient :
+	print 'original_cuts : %d, proposed cuts : %d'%(cuts,proposed_cuts)
+	cut_value = order[i]
+	cuts = proposed_cuts
+	quotient = proposed_quotient
+     
+    P1 = numpy.where(fiedler<=cut_value)[0]
+    P2 = numpy.where(fiedler>cut_value)[0]
+
+    return P1,P2,cut_value
+
+def metis(A, parts) :
+   from collections import defaultdict
+   from pymetis import part_graph
+
+   adj = defaultdict(list)
+   for i in range(A.shape[0]):
+     adj[i] = list(A.indices[A.indptr[i]:A.indptr[i+1]])
+
+   return part_graph(parts, adj)

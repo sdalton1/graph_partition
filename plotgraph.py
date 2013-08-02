@@ -111,7 +111,7 @@ def plotperms(A, P1, title=None, subplot=None) :
 
 if __name__=="__main__":
     from scipy.io import loadmat
-    d = loadmat('random_disk_graph_1000.mat')
-    splitting = loadmat('random_disk_graph_1000_splitting.mat')['splitting'].ravel()
+    d = loadmat('data/random_disk_graph_1000.mat')
+    splitting = loadmat('data/random_disk_graph_1000_splitting.mat')['splitting'].ravel()
     #plotgraph(d['V'],d['E'])
     plotsplitting(d['V'],d['E'],splitting)

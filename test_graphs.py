@@ -21,12 +21,14 @@ def load_graph(name) :
   dir = 'data/'
   try :
     if isinstance(name, str) :
-    	mesh = loadmat(dir+name)
+	meshname = dir+name
     else :
-	mesh = loadmat(dir+names[name])
+	meshname = dir+names[name]
+
+    mesh = loadmat(meshname)
   except IOError as e:
-    print 'Matrix market file : %s.mtx not available...downloading'%name
-    url = base%(name,name)
+    print 'Matrix market file : %s.mtx not available...downloading'%meshname
+    url = base%(meshname,meshname)
     response = urllib2.urlopen(url)
     graph = response.read()
     adj_lists = [map(int,a.split()) for a in graph.splitlines() if a]
@@ -39,7 +41,7 @@ def load_graph(name) :
     V = numpy.ones(2*num_edges)
 
     G = coo_matrix((V,(I,J)), shape=(num_nodes,num_nodes))
-    mmwrite(dir+name, G) 
+    mmwrite(dir+meshname, G) 
 
     G_nx = make_graph(G)
     pos = nx.spring_layout(G_nx, iterations=200)
@@ -48,7 +50,7 @@ def load_graph(name) :
     V=numpy.vstack((x,y)).T
     E=numpy.vstack((G.row,G.col)).T
     mesh = {'V':V, 'E':E}
-    savemat(dir+name,mesh)
+    savemat(dir+meshname,mesh)
 
   return mesh
 
